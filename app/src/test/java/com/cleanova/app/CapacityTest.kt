@@ -1,5 +1,5 @@
 package com.cleanova.app
-import com.cleanova.app.data.Capacity
+import com.cleanova.app.domain.Capacity
 import org.junit.Assert.assertEquals
 import org.junit.Test
 class CapacityTest {

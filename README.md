@@ -1,10 +1,10 @@
 # Cleanova
 **Less Clutter. More Life.**
 
-Native Android storage utility. Foundation v0.1: device capacity, accessible media inventory, three-tab shell and local appearance preferences. No deletion, AI classification, payments, ads, accounts or onboarding in this milestone. No network permission.
+Native Android, local-first storage utility. Foundation v0.1 provides capacity, accessible media inventory, three-tab shell and appearance preferences. No AI cleaning, deletion, payments, ads, accounts, network access or onboarding yet.
 
 ## Build
-JDK 17, Android SDK 35, Gradle 8.9. Run `gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug`. Use the same Gradle version in Android Studio or the cloud IDE. GitHub Actions builds a debug APK. This is an initial development branch, not a release.
+JDK 17, SDK 35, Gradle 8.9. Run `gradle :app:assembleDebug :app:testDebugUnitTest :app:lintDebug`. CI uses the hosted runner's Android SDK and explicitly installs required packages. Gradle wrapper is not included yet; use the pinned Gradle version.
 
-## Boundaries
-UI -> ViewModel -> repository -> Android APIs. Device capacity is the internal data volume reported by StatFs, not advertised hardware capacity. Media results cover only granted access and are not estimated reclaimable space. No files are modified.
+## Architecture
+See [foundation contracts and quality gates](docs/FOUNDATION.md) and [roadmap](docs/ROADMAP.md). Internal data volume capacity is not advertised hardware capacity. Media totals are accessible inventory, not reclaimable bytes. Build/device validation is required before merge.

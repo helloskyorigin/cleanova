@@ -4,38 +4,54 @@ import android.app.Application
 import android.os.Environment
 import android.os.StatFs
 import android.provider.MediaStore
+import android.os.CancellationSignal
+import android.os.OperationCanceledException
+import android.net.Uri
+import com.cleanova.app.domain.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
-data class Capacity(val total: Long, val available: Long) {
-    val used: Long get() = (total - available).coerceAtLeast(0)
-    val fraction: Float get() = if (total > 0) (used.toDouble() / total).toFloat().coerceIn(0f, 1f) else 0f
-}
-data class MediaInventory(val photos: Long, val videos: Long, val photoBytes: Long, val videoBytes: Long)
-class StorageRepository(private val app: Application) {
-    suspend fun capacity(): Capacity = withContext(Dispatchers.IO) {
+class StorageRepository(private val app: Application) : StorageReader {
+    override suspend fun capacity(): Capacity = withContext(Dispatchers.IO) {
         val fs = StatFs(Environment.getDataDirectory().absolutePath)
         Capacity(fs.totalBytes, fs.availableBytes)
     }
-    suspend fun inventory(): MediaInventory = withContext(Dispatchers.IO) {
-        suspend fun count(uri: android.net.Uri): Pair<Long, Long> {
-            var count = 0L
-            var bytes = 0L
-            val cursor = app.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.SIZE), null, null, null)
-                ?: error("Media provider unavailable")
-            cursor.use {
-                while (it.moveToNext()) {
-                    coroutineContext.ensureActive()
-                    count++
-                    bytes += it.getLong(0).coerceAtLeast(0)
+
+    private suspend fun count(uri: Uri, grant: Grant): Pair<Long, Long> {
+        if (grant == Grant.NONE) return 0L to 0L
+        return withContext(Dispatchers.IO) {
+            suspendCancellableCoroutine { continuation ->
+                val signal = CancellationSignal()
+                continuation.invokeOnCancellation { signal.cancel() }
+                try {
+                    var count = 0L
+                    var bytes = 0L
+                    val cursor = app.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.SIZE), null, null, null, signal)
+                        ?: error("Media provider unavailable")
+                    cursor.use {
+                        while (it.moveToNext()) {
+                            if (!continuation.isActive) return@use
+                            count++
+                            bytes += it.getLong(0).coerceAtLeast(0)
+                        }
+                    }
+                    if (continuation.isActive) continuation.resume(count to bytes)
+                } catch (e: OperationCanceledException) {
+                    if (continuation.isActive) continuation.resumeWithException(e)
+                } catch (e: Exception) {
+                    if (continuation.isActive) continuation.resumeWithException(e)
                 }
             }
-            return count to bytes
         }
-        val images = count(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        val videos = count(MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-        MediaInventory(images.first, videos.first, images.second, videos.second)
+    }
+    override suspend fun inventory(access: MediaAccess): MediaInventory {
+        require(access.hasAny)
+        val images = count(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, access.images)
+        val videos = count(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, access.videos)
+        return MediaInventory(images.first, videos.first, images.second, videos.second, access)
     }
 }
