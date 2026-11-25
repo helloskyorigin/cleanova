@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -88,20 +89,33 @@ private fun HomeStorageCard(state: HomeState, onRefresh: () -> Unit) = Panel {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.home_device_storage), Modifier.weight(1f),
             color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
-        Icon(Icons.Outlined.Storage, null, tint = MaterialTheme.colorScheme.primary)
+        IconButton(onClick = onRefresh) {
+            Icon(Icons.Outlined.Refresh, stringResource(R.string.home_refresh_storage), tint = MaterialTheme.colorScheme.primary)
+        }
     }
     val cap = state.capacity
     if (cap == null) {
-        Text(stringResource(if (state.capacityError) R.string.home_storage_unavailable else R.string.home_storage_loading))
+        Text(stringResource(if (state.capacityError) R.string.home_storage_unavailable else R.string.home_storage_loading),
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (state.capacityError) TextButton(onClick = onRefresh) { Text(stringResource(R.string.home_retry)) }
+        else LinearProgressIndicator(Modifier.fillMaxWidth())
     } else {
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }
-                .format(cap.available.coerceAtLeast(0) / 1_000_000_000.0),
-                fontSize = 40.sp, fontWeight = FontWeight.Bold, lineHeight = 46.sp,
-                modifier = Modifier.alignByBaseline())
-            Text(stringResource(R.string.home_gb_free), color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 15.sp, modifier = Modifier.alignByBaseline())
+        val available = NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }
+            .format(cap.available.coerceIn(0, cap.total.coerceAtLeast(0)) / 1_000_000_000.0)
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth < 220.dp || LocalDensity.current.fontScale >= 1.4f) {
+                Column {
+                    Text(available, fontSize = 36.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.home_gb_free), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(available, fontSize = 40.sp, fontWeight = FontWeight.Bold,
+                        lineHeight = 46.sp, modifier = Modifier.alignByBaseline())
+                    Text(stringResource(R.string.home_gb_free), color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 15.sp, modifier = Modifier.alignByBaseline())
+                }
+            }
         }
         val progress by animateFloatAsState(cap.fraction, tween(CleanovaMotion.storageProgressMs), label = "homeStorage")
         Box(Modifier.fillMaxWidth().height(12.dp).clip(CircleShape)
@@ -113,8 +127,9 @@ private fun HomeStorageCard(state: HomeState, onRefresh: () -> Unit) = Panel {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(stringResource(R.string.home_used, gb(cap.used)), Modifier.weight(1f),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(stringResource(R.string.home_total, gb(cap.total)),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.home_total, gb(cap.total)), Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.End)
         }
         if (state.capacityError) {
             Text(stringResource(R.string.home_stale_storage), style = MaterialTheme.typography.bodySmall)
@@ -135,7 +150,7 @@ private fun SmartCleanCard(
         Box(Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
             Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(27.dp), tint = MaterialTheme.colorScheme.primary)
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.width(12.dp))
         Text(stringResource(R.string.home_smart_clean), style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
     }
@@ -143,6 +158,8 @@ private fun SmartCleanCard(
     Text(stringResource(R.string.home_smart_description), color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.bodyMedium)
     if (state.scanning) {
+        Text(stringResource(R.string.home_scan_progress), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
         LinearProgressIndicator(Modifier.fillMaxWidth())
         OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.home_cancel_scan))
@@ -153,12 +170,20 @@ private fun SmartCleanCard(
             shape = RoundedCornerShape(CleanovaRadius.button)) {
             Icon(Icons.Outlined.CenterFocusStrong, null, Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(if (state.inventory != null) R.string.home_scan_again else R.string.home_smart_scan),
+            Text(stringResource(when {
+                !permission.hasAny -> R.string.home_allow_access
+                state.inventory?.access == permission -> R.string.home_scan_again
+                else -> R.string.home_smart_scan
+            }),
                 fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
         }
     }
-    if (permission.hasAny && !permission.isFull && !state.scanning) {
-        TextButton(onClick = onChangeAccess) { Text(stringResource(R.string.home_change_access)) }
+    if (!permission.isFull) {
+        Text(stringResource(R.string.home_scan_coverage), style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (permission.hasAny && !state.scanning) {
+            TextButton(onClick = onChangeAccess) { Text(stringResource(R.string.home_change_access)) }
+        }
     }
     state.scanError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     state.inventory?.takeIf { it.access == permission }?.let { result ->
@@ -178,13 +203,14 @@ private fun UpcomingCard(modifier: Modifier, icon: ImageVector, title: String, d
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(icon, null, Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.weight(1f))
-                Icon(Icons.Outlined.ArrowOutward, null, Modifier.size(15.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                // Upcoming tools are intentionally not interactive until implemented.
             }
             Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(stringResource(R.string.home_coming_soon), style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+                Text(stringResource(R.string.home_coming_soon), Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
