@@ -1,1 +1,32 @@
-<resources><string name="app_name">Cleanova</string></resources>
+<resources>
+    <string name="app_name">Cleanova</string>
+    <string name="home_tagline">Less Clutter. More Life.</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_device_storage">Device storage</string>
+    <string name="home_storage_unavailable">Storage unavailable</string>
+    <string name="home_storage_loading">Reading device storage…</string>
+    <string name="home_retry">Retry</string>
+    <string name="home_gb_free">GB free</string>
+    <string name="home_used">%1$s used</string>
+    <string name="home_total">%1$s total</string>
+    <string name="home_stale_storage">Last successful reading. Refresh to retry.</string>
+    <string name="home_smart_clean">SMART CLEAN</string>
+    <string name="home_make_room">Make room for more.</string>
+    <string name="home_smart_description">Discover unnecessary clutter without losing what matters.</string>
+    <string name="home_smart_scan">Smart Scan</string>
+    <string name="home_scan_again">Scan Again</string>
+    <string name="home_cancel_scan">Cancel scan</string>
+    <string name="home_change_access">Change media access</string>
+    <string name="home_inventory">Accessible media</string>
+    <string name="home_photos">Photos</string>
+    <string name="home_videos">Videos</string>
+    <string name="home_no_access">No access</string>
+    <string name="home_incomplete">Some file sizes were unavailable. Only known sizes are included.</string>
+    <string name="home_inventory_disclaimer">Read-only inventory. Cleanup and AI analysis are not available in this build.</string>
+    <string name="home_for_you">For you</string>
+    <string name="home_memory_guard">Memory Guard</string>
+    <string name="home_memory_guard_desc">Protect what matters.</string>
+    <string name="home_space_rescue">Space Rescue</string>
+    <string name="home_space_rescue_desc">Free the space you need.</string>
+    <string name="home_coming_soon">Coming soon</string>
+</resources>

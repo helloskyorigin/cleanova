@@ -52,15 +52,11 @@ import com.cleanova.app.domain.MediaAccess
     PrimaryAction("Refresh storage", onRefresh)
 }
 
-@Composable internal fun SettingsFoundation(appearance: String, onAppearance: (String) -> Unit) {
+@Composable internal fun SettingsFoundation() {
     Panel {
         Text("Appearance", style = MaterialTheme.typography.titleLarge)
-        listOf("System", "Light", "Dark").forEach { option ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = appearance == option, onClick = { onAppearance(option) })
-                Text(option)
-            }
-        }
+        Text("Light mode")
+        Text("Dark and system appearance will return after the light design is approved.", style = MaterialTheme.typography.bodySmall)
     }
     Panel {
         Text("Privacy", style = MaterialTheme.typography.titleLarge)

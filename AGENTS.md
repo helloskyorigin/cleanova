@@ -25,3 +25,7 @@ These are repository-wide instructions for all coding agents and contributors.
 
 ## Verification gate
 Compile, unit tests, lint, emulator/device smoke checks, lifecycle/permissions cases and performance checks appropriate to the change. A passing CI build is not a substitute for real-device or scale testing. Report unavailable checks explicitly. See docs/FOUNDATION.md.
+
+## Screen development
+- Use the approved screen reference, currently light mode only. Implement one screen at a time. Keep unfinished tools clearly identified; do not simulate successful scans or deletion.
+- For every change, check the diff, trigger CI, inspect the latest run for that exact commit, and fix observed failures before declaring the build passed. Repeat within the available session; if CI is still running or device verification is unavailable, state that explicitly and keep main untouched.

@@ -1,6 +1,5 @@
 package com.cleanova.app.ui
 
-import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,7 +8,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +20,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -33,7 +30,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.cleanova.app.R
+import com.cleanova.app.features.home.HomeScreen
 import com.cleanova.app.HomeViewModel
 import com.cleanova.app.core.navigation.Destination
 import com.cleanova.app.core.navigation.NavigationState
@@ -42,8 +39,6 @@ import com.cleanova.app.core.permissions.MediaPermissions
 @Composable
 fun CleanovaApp(vm: HomeViewModel = viewModel()) {
     val context = LocalContext.current
-    val prefs = remember(context) { context.getSharedPreferences("appearance", Context.MODE_PRIVATE) }
-    var appearance by remember { mutableStateOf(prefs.getString("theme", "System") ?: "System") }
     var tabName by rememberSaveable { mutableStateOf(Destination.HOME.name) }
     var settings by rememberSaveable { mutableStateOf(false) }
     val navigation = NavigationState(Destination.valueOf(tabName), settings)
@@ -78,7 +73,7 @@ fun CleanovaApp(vm: HomeViewModel = viewModel()) {
         if (!permission.hasAny) requestAccess() else vm.scan()
     }
     BackHandler(navigation.canGoBack) { navigate(navigation.back()) }
-    CleanovaTheme(appearance) {
+    CleanovaTheme("Light") {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
@@ -91,33 +86,29 @@ fun CleanovaApp(vm: HomeViewModel = viewModel()) {
                 transitionSpec = { fadeIn(tween(CleanovaMotion.navigationMs)) togetherWith fadeOut(tween(CleanovaMotion.navigationMs)) },
                 label = "navigation"
             ) { page ->
-                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = CleanovaSpacing.screen, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(CleanovaSpacing.large)) {
+                if (page == Destination.HOME) {
+                    HomeScreen(state, permission,
+                        onSettings = { navigate(navigation.select(Destination.SETTINGS)) },
+                        onRefresh = vm::refresh, onScan = scan, onCancel = vm::cancelScan,
+                        onChangeAccess = requestAccess)
+                } else Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = CleanovaSpacing.screen, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(CleanovaSpacing.large)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         if (page == Destination.SETTINGS) IconButton(onClick = { navigate(navigation.back()) }) { Icon(Icons.Outlined.ArrowBack, "Back") }
-                        if (page == Destination.HOME) Image(painterResource(R.drawable.cleanova_logo), null, Modifier.size(40.dp).padding(end = 6.dp))
                         Text(when(page) {
                             Destination.HOME -> "Cleanova"
                             Destination.MEDIA -> "Media"
                             Destination.STORAGE -> "Storage"
                             Destination.SETTINGS -> "Settings"
                         }, fontSize = 30.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        if (page == Destination.HOME) IconButton(onClick = { navigate(navigation.select(Destination.SETTINGS)) }) { Icon(Icons.Outlined.Settings, "Settings") }
                     }
                     when (page) {
-                        Destination.HOME -> {
-                            CapacityCard(state, vm::refresh)
-                            val title = if ((state.capacity?.fraction ?: 0f) >= 0.9f) "Make some room." else "Less clutter. More life."
-                            InventoryPanel(title, state, permission, scan, vm::cancelScan, requestAccess)
-                        }
+                        Destination.HOME -> Unit
                         Destination.MEDIA -> InventoryPanel("Your media", state, permission, scan, vm::cancelScan, requestAccess)
                         Destination.STORAGE -> {
                             CapacityCard(state, vm::refresh)
                             StorageFoundation(vm::refresh)
                         }
-                        Destination.SETTINGS -> SettingsFoundation(appearance) {
-                            appearance = it
-                            prefs.edit().putString("theme", it).apply()
-                        }
+                        Destination.SETTINGS -> SettingsFoundation()
                     }
                 }
             }
