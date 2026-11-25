@@ -20,11 +20,20 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Verify Android SDK and install required packages
+      - name: Locate hosted Android SDK and required packages
         shell: bash
         run: |
-          command -v sdkmanager
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          test -d "$sdk" || { echo "::error::Android SDK not found at $sdk"; exit 1; }
+          echo "ANDROID_HOME=$sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$sdk" >> "$GITHUB_ENV"
+          if [[ ! -f "$sdk/platforms/android-35/android.jar" || ! -d "$sdk/build-tools/35.0.0" ]]; then
+            manager="$(find "$sdk/cmdline-tools" -type f -name sdkmanager -print | sort -V | tail -n 1)"
+            test -n "$manager" || { echo "::error::sdkmanager not found"; exit 1; }
+            "$manager" --sdk_root="$sdk" 'platforms;android-35' 'build-tools;35.0.0'
+          fi
+          test -f "$sdk/platforms/android-35/android.jar"
+          test -d "$sdk/build-tools/35.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
