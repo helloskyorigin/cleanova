@@ -9,7 +9,6 @@ import android.os.OperationCanceledException
 import android.net.Uri
 import com.cleanova.app.domain.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
@@ -21,25 +20,23 @@ class StorageRepository(private val app: Application) : StorageReader {
         Capacity(fs.totalBytes, fs.availableBytes)
     }
 
-    private suspend fun count(uri: Uri, grant: Grant): Pair<Long, Long> {
-        if (grant == Grant.NONE) return 0L to 0L
+    private suspend fun count(uri: Uri, grant: Grant): MediaTally {
+        if (grant == Grant.NONE) return MediaTally(0, 0, 0, false)
         return withContext(Dispatchers.IO) {
             suspendCancellableCoroutine { continuation ->
                 val signal = CancellationSignal()
                 continuation.invokeOnCancellation { signal.cancel() }
                 try {
-                    var count = 0L
-                    var bytes = 0L
+                    val tally = MediaAccumulator()
                     val cursor = app.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns.SIZE), null, null, null, signal)
                         ?: error("Media provider unavailable")
                     cursor.use {
                         while (it.moveToNext()) {
                             if (!continuation.isActive) return@use
-                            count++
-                            bytes += it.getLong(0).coerceAtLeast(0)
+                            tally.record(if (it.isNull(0)) null else it.getLong(0))
                         }
                     }
-                    if (continuation.isActive) continuation.resume(count to bytes)
+                    if (continuation.isActive) continuation.resume(tally.snapshot())
                 } catch (e: OperationCanceledException) {
                     if (continuation.isActive) continuation.resumeWithException(e)
                 } catch (e: Exception) {
@@ -52,6 +49,9 @@ class StorageRepository(private val app: Application) : StorageReader {
         require(access.hasAny)
         val images = count(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, access.images)
         val videos = count(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, access.videos)
-        return MediaInventory(images.first, videos.first, images.second, videos.second, access)
+        return MediaInventory(
+            images.count, videos.count, images.knownBytes, videos.knownBytes, access,
+            images.unknownSizes, videos.unknownSizes, images.overflow || videos.overflow
+        )
     }
 }

@@ -8,3 +8,5 @@ JDK 17, SDK 35, Gradle 8.9. Run `gradle :app:assembleDebug :app:testDebugUnitTes
 
 ## Architecture
 See [foundation contracts and quality gates](docs/FOUNDATION.md) and [roadmap](docs/ROADMAP.md). Internal data volume capacity is not advertised hardware capacity. Media totals are accessible inventory, not reclaimable bytes. Build/device validation is required before merge.
+
+The storage coordinator is independent of the Android UI and can be tested with fake repositories. See `core/storage/StorageSession.kt` and the JVM tests. Media-size totals include only known metadata; they are not predicted cleanup savings.

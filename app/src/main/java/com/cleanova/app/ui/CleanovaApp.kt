@@ -57,9 +57,10 @@ fun CleanovaApp(vm: HomeViewModel = viewModel()) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 val now = MediaPermissions.read(context)
-                if (now != permission || now.hasAny && !now.isFull) vm.clearInventory()
                 permission = now
-                vm.refresh()
+                vm.onResume()
+            } else if (event == Lifecycle.Event.ON_STOP) {
+                vm.cancelScan()
             }
         }
         lifecycle.addObserver(observer)

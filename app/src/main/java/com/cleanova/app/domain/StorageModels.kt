@@ -13,7 +13,13 @@ data class MediaAccess(val images: Grant, val videos: Grant) {
     val label: String get() = if (isFull) "Full" else if (hasAny) "Limited" else "None"
 }
 
-data class MediaInventory(val photos: Long, val videos: Long, val photoBytes: Long, val videoBytes: Long, val access: MediaAccess)
+data class MediaInventory(
+    val photos: Long, val videos: Long, val photoBytes: Long, val videoBytes: Long,
+    val access: MediaAccess, val unknownPhotoSizes: Long = 0, val unknownVideoSizes: Long = 0,
+    val sizeOverflow: Boolean = false
+) {
+    val incompleteSize: Boolean get() = unknownPhotoSizes > 0 || unknownVideoSizes > 0 || sizeOverflow
+}
 
 interface StorageReader {
     suspend fun capacity(): Capacity

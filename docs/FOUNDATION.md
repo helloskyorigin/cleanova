@@ -22,3 +22,16 @@ No destructive action without a verified current URI, user review and applicable
 
 ## Out of scope
 Onboarding, ads, billing, login, AI ranking, deletion, compression, background maintenance. Implement after stable foundation, screen by screen. Google AI Studio preview is manual and does not replace device validation.
+
+## Implemented core update
+- `domain/StorageModels.kt` defines repository contracts; `MediaAccumulator` aggregates media metadata with constant application-level memory and tracks unknown sizes.
+- `core/storage/StorageSession.kt` owns the scan state machine (idle/running/ready/failed). A serialized scope, cancellation and generation checks prevent stale operations from publishing. Android ViewModel wires dependencies; feature screens observe immutable state. Selected access snapshots are invalidated on resume; foreground scans cancel when the app stops.
+- Domain and coordinator tests include synthetic 100,000-item aggregation, unknown sizes, overflow, permission changes, duplicate requests, retry and cancellation. Synthetic tests are not Android provider benchmarks.
+- Single Gradle app module retained intentionally. Add feature packages before adding modules; do not invent empty engines or databases before their first use.
+
+## Future interfaces, not implemented
+- Shared media catalog: stable volume + URI identifiers, generation-aware index, bounded thumbnails, explicit scan coverage. Use Room only after defining schema and migrations.
+- Local intelligence: cancellable bounded batches, model version and confidence, no uploaded media, explainable recommendations.
+- Cleanup operations: immutable reviewed plan, permission/URI/protected-item recheck, system confirmation, per-item result, reconcile actual bytes.
+- Compression: preserve source by default, validate output, cancellation/cleanup of temporary files.
+- Optional remote services: separate APIs, rate limits, regional rollout, cost limits, data minimization; never couple a local scan to server availability.

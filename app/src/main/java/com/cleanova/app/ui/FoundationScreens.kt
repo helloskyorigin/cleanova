@@ -38,6 +38,9 @@ import com.cleanova.app.domain.MediaAccess
             Detail(if (result.access.images == Grant.NONE) "Photos" else "Photos (" + result.photos + ")", if (result.access.images == Grant.NONE) "No access" else gb(result.photoBytes))
             HorizontalDivider()
             Detail(if (result.access.videos == Grant.NONE) "Videos" else "Videos (" + result.videos + ")", if (result.access.videos == Grant.NONE) "No access" else gb(result.videoBytes))
+            if (result.incompleteSize) {
+                Text("Some file sizes were unavailable or exceeded the total range. Only known sizes are included.", style = MaterialTheme.typography.bodySmall)
+            }
             Text("Media size is not reclaimable storage. Duplicate detection is not included in this build.", style = MaterialTheme.typography.bodySmall)
         }
     }
