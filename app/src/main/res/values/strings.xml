@@ -12,7 +12,7 @@
     <string name="home_stale_storage">Last successful reading. Refresh to retry.</string>
     <string name="home_smart_clean">SMART CLEAN</string>
     <string name="home_make_room">Make room for more.</string>
-    <string name="home_smart_description">Discover unnecessary clutter without losing what matters.</string>
+    <string name="home_smart_description">See how much space your photos and videos use. Nothing is deleted.</string>
     <string name="home_smart_scan">Smart Scan</string>
     <string name="home_scan_again">Scan Again</string>
     <string name="home_cancel_scan">Cancel scan</string>
@@ -29,4 +29,8 @@
     <string name="home_space_rescue">Space Rescue</string>
     <string name="home_space_rescue_desc">Free the space you need.</string>
     <string name="home_coming_soon">Coming soon</string>
+    <string name="home_refresh_storage">Refresh storage</string>
+    <string name="home_allow_access">Allow media access</string>
+    <string name="home_scan_coverage">Only the media you allow is included.</string>
+    <string name="home_scan_progress">Reading media…</string>
 </resources>
