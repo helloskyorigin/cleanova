@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cleanova</string>
+    <string name="tagline">Less Clutter. More Life.</string>
+    <string name="nav_overview">Overview</string>
+    <string name="nav_media">Media</string>
+    <string name="nav_folders">Deep Scan</string>
+    <string name="nav_advisor">Advisor</string>
+    <string name="smart_scan_cta">Smart Scan</string>
+    <string name="scanning_label">Analyzing Storage…</string>
+    <string name="clean_cache_cta">Sweep App Cache</string>
+    <string name="system_storage_cta">System Storage Settings</string>
+    <string name="pick_media_cta">Audit Photos &amp; Videos</string>
+    <string name="pick_folder_cta">Scan a Folder</string>
+    <string name="ai_firebase_notice">Sample AI insights shown — Gemini-powered declutter recommendations require Firebase.</string>
+    <string name="hero_banner_desc">Cleanova glacial glassmorphic storage visual</string>
+</resources>
